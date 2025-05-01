@@ -614,6 +614,23 @@ wheels = [
 ]
 
 [[package]]
+name = "lightgbm"
+version = "4.6.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "numpy" },
+    { name = "scipy" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/68/0b/a2e9f5c5da7ef047cc60cef37f86185088845e8433e54d2e7ed439cce8a3/lightgbm-4.6.0.tar.gz", hash = "sha256:cb1c59720eb569389c0ba74d14f52351b573af489f230032a1c9f314f8bab7fe", size = 1703705 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/f2/75/cffc9962cca296bc5536896b7e65b4a7cdeb8db208e71b9c0133c08f8f7e/lightgbm-4.6.0-py3-none-macosx_10_15_x86_64.whl", hash = "sha256:b7a393de8a334d5c8e490df91270f0763f83f959574d504c7ccb9eee4aef70ed", size = 2010151 },
+    { url = "https://files.pythonhosted.org/packages/21/1b/550ee378512b78847930f5d74228ca1fdba2a7fbdeaac9aeccc085b0e257/lightgbm-4.6.0-py3-none-macosx_12_0_arm64.whl", hash = "sha256:2dafd98d4e02b844ceb0b61450a660681076b1ea6c7adb8c566dfd66832aafad", size = 1592172 },
+    { url = "https://files.pythonhosted.org/packages/64/41/4fbde2c3d29e25ee7c41d87df2f2e5eda65b431ee154d4d462c31041846c/lightgbm-4.6.0-py3-none-manylinux2014_aarch64.whl", hash = "sha256:4d68712bbd2b57a0b14390cbf9376c1d5ed773fa2e71e099cac588703b590336", size = 3454567 },
+    { url = "https://files.pythonhosted.org/packages/42/86/dabda8fbcb1b00bcfb0003c3776e8ade1aa7b413dff0a2c08f457dace22f/lightgbm-4.6.0-py3-none-manylinux_2_28_x86_64.whl", hash = "sha256:cb19b5afea55b5b61cbb2131095f50538bd608a00655f23ad5d25ae3e3bf1c8d", size = 3569831 },
+    { url = "https://files.pythonhosted.org/packages/5e/23/f8b28ca248bb629b9e08f877dd2965d1994e1674a03d67cd10c5246da248/lightgbm-4.6.0-py3-none-win_amd64.whl", hash = "sha256:37089ee95664b6550a7189d887dbf098e3eadab03537e411f52c63c121e3ba4b", size = 1451509 },
+]
+
+[[package]]
 name = "mako"
 version = "1.3.9"
 source = { registry = "https://pypi.org/simple" }
@@ -773,12 +790,13 @@ dependencies = [
     { name = "feature-engine" },
     { name = "folium" },
     { name = "jupyter-ruff" },
+    { name = "lightgbm" },
     { name = "matplotlib" },
     { name = "mlflow" },
     { name = "numpy" },
     { name = "pandas" },
+    { name = "pip" },
     { name = "polars" },
-    { name = "pylyzer" },
     { name = "pyqt6" },
     { name = "pyright" },
     { name = "ruff" },
@@ -786,6 +804,7 @@ dependencies = [
     { name = "scikit-lego" },
     { name = "seaborn" },
     { name = "tables" },
+    { name = "xgboost-cpu" },
 ]
 
 [package.metadata]
@@ -794,12 +813,13 @@ requires-dist = [
     { name = "feature-engine", specifier = ">=1.8.3" },
     { name = "folium", specifier = ">=0.19.5" },
     { name = "jupyter-ruff", specifier = ">=0.2.0" },
+    { name = "lightgbm", specifier = ">=4.6.0" },
     { name = "matplotlib", specifier = ">=3.10.1" },
     { name = "mlflow", specifier = ">=2.21.2" },
     { name = "numpy", specifier = ">=2.2.3" },
     { name = "pandas", specifier = ">=2.2.3" },
+    { name = "pip", specifier = ">=25.1" },
     { name = "polars", specifier = ">=1.24.0" },
-    { name = "pylyzer", specifier = ">=0.0.82" },
     { name = "pyqt6", specifier = ">=6.8.1" },
     { name = "pyright", specifier = ">=1.1.399" },
     { name = "ruff", specifier = ">=0.11.7" },
@@ -807,6 +827,7 @@ requires-dist = [
     { name = "scikit-lego", specifier = ">=0.9.4" },
     { name = "seaborn", specifier = ">=0.13.2" },
     { name = "tables", specifier = ">=3.10.2" },
+    { name = "xgboost-cpu", specifier = ">=3.0.0" },
 ]
 
 [[package]]
@@ -1096,6 +1117,15 @@ wheels = [
 ]
 
 [[package]]
+name = "pip"
+version = "25.1"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/79/67/c06f625e2968c417052b3a4a0eef40656d5d4d44033e57b40ec474af1d28/pip-25.1.tar.gz", hash = "sha256:272bdd1289f80165e9070a4f881e8f9e1001bbb50378561d1af20e49bf5a2200", size = 1939624 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/e0/f0/8a2806114cd36e282823fd4d8e88e3b94dc943c2569c350d0c826a49db38/pip-25.1-py3-none-any.whl", hash = "sha256:13b4aa0aaad055020a11bec8a1c2a70a2b2d080e12d89b962266029fff0a16ba", size = 1824948 },
+]
+
+[[package]]
 name = "platformdirs"
 version = "4.3.7"
 source = { registry = "https://pypi.org/simple" }
@@ -1245,19 +1275,6 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/52/54/295e38769133363d7ec4a5863a4d579f331728c71a6644ff1024ee529315/pydantic_core-2.33.0-cp313-cp313t-macosx_11_0_arm64.whl", hash = "sha256:7b79af799630af263eca9ec87db519426d8c9b3be35016eddad1832bac812d87", size = 1813331 },
     { url = "https://files.pythonhosted.org/packages/4c/9c/0c8ea02db8d682aa1ef48938abae833c1d69bdfa6e5ec13b21734b01ae70/pydantic_core-2.33.0-cp313-cp313t-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:eabf946a4739b5237f4f56d77fa6668263bc466d06a8036c055587c130a46f7b", size = 1986653 },
     { url = "https://files.pythonhosted.org/packages/8e/4f/3fb47d6cbc08c7e00f92300e64ba655428c05c56b8ab6723bd290bae6458/pydantic_core-2.33.0-cp313-cp313t-win_amd64.whl", hash = "sha256:8a1d581e8cdbb857b0e0e81df98603376c1a5c34dc5e54039dcc00f043df81e7", size = 1931234 },
-]
-
-[[package]]
-name = "pylyzer"
-version = "0.0.82"
-source = { registry = "https://pypi.org/simple" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/69/cb/684ea79840ea01fb4916d361732fd42ee169cf6a05ddcb79715fa35c0ff9/pylyzer-0.0.82-py3-none-macosx_11_0_arm64.whl", hash = "sha256:fc2088c87de1d6e8813d356a7f7e42768976b8dc1416fd7fdf088630e757e7e5", size = 11931534 },
-    { url = "https://files.pythonhosted.org/packages/ae/9e/2c1730bc3ba7725134cb260719952e06d740c885e36280b1c2d2f5924117/pylyzer-0.0.82-py3-none-manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:2e311b7cf132ebfe3d143e0c19efab9cf1b0628f921601e9794ab15073516fb6", size = 14800900 },
-    { url = "https://files.pythonhosted.org/packages/56/97/fbf47c8fd44e1988e3e072d58803ef2f139bcc61842842bfe5d34cc2cccd/pylyzer-0.0.82-py3-none-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:d409ec99edcfbdc38fb12cfb0f22ed4586775e5acff4df269dad1c1029c362f3", size = 13472644 },
-    { url = "https://files.pythonhosted.org/packages/17/f6/e9ee045c0f16a445a73567edeb1093429b276f3783f0e9b92dce70a8b787/pylyzer-0.0.82-py3-none-musllinux_1_2_x86_64.whl", hash = "sha256:1f0e6d81a291a2b8fa3b85403e4b8b704406e52c8b59025a5f84b885dc9e7f03", size = 13546580 },
-    { url = "https://files.pythonhosted.org/packages/ce/e6/c9bc99c3cbe643ceeefca9034a776a7901b2b9c1d739d14d4b9df3e5ea65/pylyzer-0.0.82-py3-none-win32.whl", hash = "sha256:919ba92368dd6c43236029c68ec4ab33e21ea62b8bda94c9c4c0f2569c61cf57", size = 13054837 },
-    { url = "https://files.pythonhosted.org/packages/10/c3/ab9da76ca458939c1da5fe2186b085c357b64f3526ee7f3f5f2670c11da3/pylyzer-0.0.82-py3-none-win_amd64.whl", hash = "sha256:80b87c4e24724ef6d94e16e4d7fbe0922b366a77c8f2e88ad64e8d4cf4c70e83", size = 15472118 },
 ]
 
 [[package]]
@@ -1788,6 +1805,23 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/6a/e1/0122853035b40b3f333bbb25f1939fc1045e21dd518f7f0922b60c156f7c/wrapt-1.17.2-cp313-cp313t-win32.whl", hash = "sha256:13e6afb7fe71fe7485a4550a8844cc9ffbe263c0f1a1eea569bc7091d4898555", size = 37986 },
     { url = "https://files.pythonhosted.org/packages/09/5e/1655cf481e079c1f22d0cabdd4e51733679932718dc23bf2db175f329b76/wrapt-1.17.2-cp313-cp313t-win_amd64.whl", hash = "sha256:eaf675418ed6b3b31c7a989fd007fa7c3be66ce14e5c3b27336383604c9da85c", size = 40750 },
     { url = "https://files.pythonhosted.org/packages/2d/82/f56956041adef78f849db6b289b282e72b55ab8045a75abad81898c28d19/wrapt-1.17.2-py3-none-any.whl", hash = "sha256:b18f2d1533a71f069c7f82d524a52599053d4c7166e9dd374ae2136b7f40f7c8", size = 23594 },
+]
+
+[[package]]
+name = "xgboost-cpu"
+version = "3.0.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "numpy" },
+    { name = "scipy" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/fe/7a/9388d63ce062731d179ef4242c069eedbb4ef99e1ef55b7e707756f9863d/xgboost_cpu-3.0.0.tar.gz", hash = "sha256:33614ea793447bf68b19214fca0eb11bac9158474a6e2b0a343dc4435c38d9e3", size = 1156946 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/76/4c/b9b9cb522e5b6defa158c361c02ba9b36d375bc0ba4b0fad58619e72541f/xgboost_cpu-3.0.0-py3-none-manylinux2014_aarch64.whl", hash = "sha256:1041c8594ebc3ee4cde6871d2fcd8eaa5c7a8b399de7caf5ae91749d5889d7c3", size = 4841285 },
+    { url = "https://files.pythonhosted.org/packages/c0/7c/0c861cba6b662a30371b2647d08bbf71e0a3311c21402114d708eeed94bc/xgboost_cpu-3.0.0-py3-none-manylinux2014_x86_64.whl", hash = "sha256:1fd557fb2d2d71397f286fb1f7dd591289cf837a8ea2d2f5ce7bac1249bb947b", size = 4903728 },
+    { url = "https://files.pythonhosted.org/packages/4a/5b/0ec9e50b56f604bdac1c686224a32978a90ec34a599b202db8b5d10de3a4/xgboost_cpu-3.0.0-py3-none-manylinux_2_28_aarch64.whl", hash = "sha256:708af2e7d644e122a93994a583a79802c7e092121091de8d674ba670c551fc68", size = 4602929 },
+    { url = "https://files.pythonhosted.org/packages/71/14/0a87b712ef72c42a4f1a7cb52d93e5aedc4899a150a5bcb9df081a1fb6e9/xgboost_cpu-3.0.0-py3-none-manylinux_2_28_x86_64.whl", hash = "sha256:54f80f521ad73f5b861d840ab8ddd8ea4855d582081646dbf8d7ed7fa89bc132", size = 4954069 },
+    { url = "https://files.pythonhosted.org/packages/f7/96/f4b55e43fc46e23608fb2723c546c6a2a6c123402649b99e05a3a813586b/xgboost_cpu-3.0.0-py3-none-win_amd64.whl", hash = "sha256:7b2553a922d0765c6b80105a0d6fc67f053e668ce5bba549abe789c67479feb2", size = 1925577 },
 ]
 
 [[package]]

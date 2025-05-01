@@ -1,0 +1,6 @@
+artifact_location: mlflow-artifacts:/504015519055006746
+creation_time: 1746299240450
+experiment_id: '504015519055006746'
+last_update_time: 1746299240450
+lifecycle_stage: active
+name: nyc_vehicle_clusters

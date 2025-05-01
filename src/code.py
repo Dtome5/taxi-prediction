@@ -1,173 +1,98 @@
-import polars as pl
-import pandas as pd
-import joblib
-import numpy as np
-import folium
-import matplotlib.pyplot as plt
 import json
-from datetime import datetime
+import mlflow
+import folium
+import joblib
+import lightgbm as lgb
+import matplotlib.pyplot as plt
+import polars as pl
 from sklearn.cluster import KMeans
-from sklearn.neighbors import KNeighborsClassifier
-from sklearn.preprocessing import LabelEncoder
-from sklearn.preprocessing import StandardScaler
-from sklearn.linear_model import LinearRegression
-from sklego.preprocessing import RepeatingBasisFunction
-from sklearn.pipeline import Pipeline
-from sklearn.model_selection import train_test_split
-from sklearn.neighbors import NearestNeighbors
+from sklearn.ensemble import RandomForestRegressor
 from sklearn.metrics import (
-    mean_squared_error,
     calinski_harabasz_score,
-    r2_score,
     davies_bouldin_score,
+    root_mean_squared_error,
 )
-
-# pl.read_csv("data/raw/data-apr14.csv")[:100].write_csv("data/processed/reduced.csv")
-
-
-def process(data: pl.DataFrame, name: str):
-    data = data.with_columns(
-        pl.col("Date/Time").str.strptime(pl.Datetime, "%m/%d/%Y %H:%M:%S")
-    )
-    data = data.with_columns(pl.col("Date/Time").dt.hour().alias("Hour"))
-    data = data.with_columns(pl.col("Date/Time").dt.day().alias("Day"))
-    data = data.with_columns(pl.col("Date/Time").dt.month().alias("Month"))
-    data = data.with_columns(pl.col("Date/Time").dt.year().alias("Year"))
-    data = data.with_columns(pl.col("Date/Time").dt.minute().alias("Minute"))
-    data.write_csv("data/processed/data_intermediate.csv")
-    hour = RepeatingBasisFunction(column="Hour", input_range=(0, 23))
-    hour.fit(data)
-    joblib.dump(hour, "models/scalers/hour_rbf.joblib")
-    hour.transform(data)
-    minute = RepeatingBasisFunction(column="Minute", input_range=(0, 60))
-    minute.fit(data)
-    joblib.dump(minute, "models/scalers/hour_rbf.joblib")
-    minute.transform(data)
-    day = RepeatingBasisFunction(column="Day", input_range=(0, 365))
-    day.fit(data)
-    joblib.dump(minute, "models/scalers/minute_rbf.joblib")
-    day.transform(data)
-    month = RepeatingBasisFunction(column="Month", input_range=(0, 12))
-    month.fit(data)
-    joblib.dump(month, "models/scalers/month_rbf.joblib")
-    month.transform(data)
-    le = LabelEncoder()
-    data = data.with_columns(
-        pl.Series(name="Base", values=le.fit_transform(data["Base"]))
-    )
-    data = data.drop(["Date/Time"])
-    # for i in data.columns:
-    scaler = StandardScaler()
-    scaler.fit(data)
-    joblib.dump(scaler, filename="models/scalers/scaler.joblib")
-    # data = data.with_columns(pl.lit(scaler.transform(data).flatten()).alias(i))
-    print(data, data.dtypes)
-    joblib.dump(data, f"data/processed/{name}.joblib")
-    data.write_csv(f"data/processed/{name}.csv")
+from sklearn.preprocessing import StandardScaler
+from sklearn.model_selection import train_test_split
+from xgboost import XGBRegressor
 
 
-"""
-april = pl.read_csv("data/raw/data-apr14.csv")
-may = pl.read_csv("data/raw/data-may14.csv")
-june = pl.read_csv("data/raw/data-jun14.csv")
-july = pl.read_csv("data/raw/data-jul14.csv")
-august = pl.read_csv("data/raw/data-aug14.csv")
-september = pl.read_csv("data/raw/data-sep14.csv")
-months = {
-    "april": april,
-    "may": may,
-    "june": june,
-    "july": july,
-    "august": august,
-    "september": september,
-}
-total_data = pl.DataFrame()
-for month, data in months.items():
-    total_data = pl.concat([total_data, data])
-print(total_data)
-process(total_data, "data")
-# """
+def process(data: pl.DataFrame, name: str = "data"):
+    with mlflow.start_run(run_name="process_data"):
+        data = data.with_columns(
+            pl.col("Date/Time").str.strptime(pl.Datetime, "%m/%d/%Y %H:%M:%S")
+        )
+        data = data.with_columns(pl.col("Date/Time").dt.hour().alias("Hour"))
+        data = data.with_columns(pl.col("Date/Time").dt.day().alias("Day"))
+        data = data.with_columns(pl.col("Date/Time").dt.month().alias("Month"))
+        data = data.with_columns(pl.col("Date/Time").dt.year().alias("Year"))
+        data = data.with_columns(pl.col("Date/Time").dt.minute().alias("Minute"))
+        data = data.drop(["Date/Time"])
+        joblib.dump(data, f"data/processed/{name}.joblib")
+        data.write_csv(f"data/processed/{name}.csv")
+        mlflow.log_artifact(f"data/processed/{name}.csv", "processed data")
 
 
-def predict(data: pl.DataFrame, neighbor_no: int = 10):
-    kn = KMeans(n_clusters=neighbor_no, random_state=0)
-    kn.fit(data)
-    nbrs = NearestNeighbors(n_neighbors=10)
-    nbrs.fit(data)
-    return kn
+def train_clusters(
+    data: pl.DataFrame = pl.read_csv("data/processed/data.csv"), neighbor_no: int = 10
+):
+    with mlflow.start_run(run_name="Clustering"):
+        km = KMeans(n_clusters=neighbor_no, random_state=0)
+        coordinates = data["Lat", "Lon"]
+        km.fit(coordinates)
+        joblib.dump(km, filename="models/km_clustering.joblib")
+        # Calculate clustering scores using the KNC results
+        chscore = calinski_harabasz_score(coordinates, km.labels_)
+        dbscore = davies_bouldin_score(coordinates, km.labels_)
 
-
-def dump_models():
-    data = pl.read_csv("data/processed/data.csv")
-    model = predict(data)
-    joblib.dump(model, filename="models/clustering.joblib")
+        # Write scores to text files
+        file_chscore = open("reports/tests/clustering/chscore.txt", "w+")
+        file_dbscore = open("reports/tests/clustering/dbscore.txt", "w+")
+        file_chscore.write(f"{chscore}")
+        file_dbscore.write(f"{dbscore}")
+        file_chscore.close()
+        file_dbscore.close()
+        # Log parameters and metrics
+        mlflow.log_param("n_clusters", neighbor_no)
+        mlflow.log_metric("calinski_harabasz", chscore)
+        mlflow.log_metric("davies_bouldin", dbscore)
+        # Log model
+        mlflow.sklearn.log_model(km, "clustering_model")
+        mlflow.end_run()
+    print("done training model")
 
 
 def dump_clusters():
-    knc = KNeighborsClassifier()
+    with mlflow.start_run(run_name="generate_clusters"):
+        # Load data and clustering model
+        data = pl.read_csv("data/processed/data.csv")
+        model = joblib.load("models/km_clustering.joblib")
 
-    # Load data and clustering model
-    data = pl.read_csv("data/processed/data.csv")
-    model = joblib.load("models/clustering.joblib")
+        # Predict clusters using the loaded model and concatenate with original data
+        cluster = pl.DataFrame({"cluster": model.predict(data["Lat", "Lon"])})
+        clusters = pl.concat([data, cluster], how="horizontal")
+        clusters.write_csv("data/clusters/kmeans_data.csv")
 
-    # Predict clusters using the loaded model and concatenate with original data
-    clusters = pl.DataFrame({"cluster": model.predict(data)})
-    cluster = pl.concat([data, clusters], how="horizontal")
+        # Print unique clusters from the original clustering model
+        print(
+            cluster["cluster"].unique(),
+        )
 
-    print("training knc")
-    # Fit KNeighborsClassifier: Apply ravel() to the target variable
-    # to ensure it is a 1D array as expected by scikit-learn
-    knc.fit(data, model.predict(data).ravel())
-    joblib.dump(knc, "models/knc_clusters.joblib")
-    print("end knc training")
-
-    # Predict clusters using the trained KNC model
-    knc_clusters = pl.DataFrame({"cluster": knc.predict(data)})
-    knc_data = pl.concat([data, knc_clusters], how="horizontal")
-
-    # Write KNC clustered data to CSV
-    knc_data.write_csv("data/clusters/clustered_data.csv")
-
-    # Load intermediate data and concatenate with KNC clusters, then write to CSV
-    data_int = pl.read_csv("data/processed/data_intermediate.csv")
-    pl.concat([data_int, knc_clusters], how="horizontal").write_csv(
-        "data/clusters/clustered_alt.csv"
-    )
-
-    # Write original clustering model data to CSV
-    cluster.write_csv("data/clusters/kmeans_data.csv")
-
-    # Print unique clusters from the original clustering model
-    print(
-        cluster["cluster"].unique(),
-    )
-
-    # Separate data by cluster from the original clustering model and write each to CSV
-    cluster_frames = {}
-    for c in cluster["cluster"].unique():
-        cluster_frames[f"cluster {c}"] = cluster.filter(pl.col("cluster") == c)
-        cluster_frames[f"cluster {c}"].write_csv(f"data/clusters/cluster {c}.csv")
-
-    # Calculate clustering scores using the KNC results
-    chscore = calinski_harabasz_score(data, knc.predict(data).ravel())
-    dbscore = davies_bouldin_score(data, knc.predict(data).ravel())
-
-    # Write scores to text files
-    file_chscore = open("tests/chscore.txt", "w+")
-    file_dbscore = open("tests/dbscore.txt", "w+")
-    file_chscore.write(f"{chscore}")
-    file_dbscore.write(f"{dbscore}")
-    file_chscore.close()
-    file_dbscore.close()
+        # Separate data by cluster from the original clustering model and write each to CSV
+        cluster_frames = {}
+        for c in clusters["cluster"].unique():
+            cluster_frames[f"cluster {c}"] = clusters.filter(pl.col("cluster") == c)
+            cluster_frames[f"cluster {c}"].write_csv(f"data/clusters/cluster {c}.csv")
+        mlflow.log_artifact("data/clusters/kmeans_data.csv", "cluster_dataframes")
+        mlflow.end_run()
 
 
-def map():
-    model = joblib.load("models/clustering.joblib")
-    latscaler = joblib.load("models/scalers/Lat.joblib")
-    lonscaler = joblib.load("models/scalers/Lon.joblib")
-    scaled_cluster_centers = model.cluster_centers_
-    lats = latscaler.inverse_transform(scaled_cluster_centers[:, [0]])
-    lons = lonscaler.inverse_transform(scaled_cluster_centers[:, [1]])
+def draw_map():
+    model = joblib.load("models/km_clustering.joblib")
+    cluster_centers = model.cluster_centers_
+    lats = cluster_centers[:, [0]]
+    lons = cluster_centers[:, [1]]
+    print(cluster_centers)
     # cluster_centers = [lats, lons]
     mean_cluster_centers = [
         float(lats.mean()),
@@ -194,14 +119,13 @@ def map():
     ]
 
     for i in range(len(lats)):
-        print([float(lats[i][0]), float(lons[i][0])])
         folium.CircleMarker(
             location=[float(lats[i][0]), float(lons[i][0])],
-            radius=7,
-            color=cluster_colors[i],
+            radius=17,
+            color="purple",
             tooltip=f"Cluster {i}",
-            # fill=True,
-            # fill_color="red",
+            fill=True,
+            fill_color="purple",
             fill_opacity=0.8,
             popup=f"Cluster {i}\nLat: {float(lats[i][0]):.4f}, Lon: {float(lons[i][0]):.4f}",
         ).add_to(mymap)
@@ -214,55 +138,172 @@ def map():
     mymap.save("map.html")
 
 
-def regression(
-    data,
-    target=["cluster"],
-):
-    data = pl.read_csv("data/clusters/clustered_data.csv")
-    print(data.group_by("cluster").len())
-    data = data.group_by(["Hour", "cluster"]).len()
-    models = {}
-    mse_errors = {}
-    r2 = {}
-    for cluster in data["cluster"].unique():
-        data_cluster = data.filter(pl.col("cluster") == cluster).drop("cluster")
-        X = data_cluster[["Hour"]]
-        y = data_cluster["len"]
-        X_train, X_test, y_train, y_test = train_test_split(
-            X, y, test_size=0.2, random_state=42
+def rmse(true, pred, dict, key):
+    rmse = root_mean_squared_error(true, pred)
+    dict[key] = rmse
+
+
+def save_test(dict, name):
+    file = open(f"reports/tests/regression/{name}", "w+")
+    json.dump(dict, file)
+    file.close()
+
+
+def lgboost_train(X_train, y_train, X_test, y_test):
+    with mlflow.start_run(run_name="LightGBM"):
+        params = {
+            "boosting_type": "gbdt",
+            "objective": "regression",
+            "metric": "rmse",
+            # Learning parameters
+            "learning_rate": 0.03,
+            # "n_estimators": 300,
+            "num_iterations": 300,
+            # Tree structure parameters
+            "random_state": 0,
+            "num_leaves": 70,
+            "max_depth": 7,
+            "max_bin": 24,
+            "bagging_freq": 1,
+            "bagging_fraction": 0.8,
+            "min_child_samples": 5,
+            # Feature sampling parameters
+            "colsample_bytree": 1.0,  # Only 2 features, use all
+            "subsample": 0.9,
+            "subsample_freq": 1,
+            # Regularization parameters
+            "reg_alpha": 0.05,
+            "reg_lambda": 0.1,
+            # Target has extreme values, using robust loss
+            "huber_delta": 5.0,
+            # "extra_trees": False,
+            # Categorical feature handling
+            "categorical_feature": ["name: cluster Hour"],
+            # Other parameters
+            "verbose": -1,
+        }
+        gst = lgb.train(
+            params,
+            lgb.Dataset(X_train, label=y_train),
+            valid_sets=lgb.Dataset(X_test, label=y_test),
+            callbacks=[lgb.early_stopping(stopping_rounds=10)],
         )
-        model = LinearRegression()
-        model.fit(X_train, y_train)
-        joblib.dump(model, "models/regression.joblib")
-        y_pred = model.predict(X_test)
-        mse = mean_squared_error(y_test, y_pred)
-        models[cluster] = {"model": model, "mse": mse}
-        mse_errors[f"Cluster {cluster}"] = mse
-        r2_value = r2_score(y_test, y_pred)
-        r2[f"Cluster {cluster}"] = r2_value
-    for cluster, result in models.items():
-        print(f"Cluster {cluster}: MSE = {result['mse']:.2f}")
-    file_mse = open("tests/regression/Mse.json", "w+")
-    file_acc = open("tests/regression/acc_score.json", "w+")
-    json.dump(r2, file_acc)
-    json.dump(mse_errors, file_mse)
-    file_mse.close()
+        mlflow.log_params(params)
+        mlflow.sklearn.log_model(gst, "XGBoost")
+        joblib.dump(gst, "models/lgb_rergressor.joblib")
+        mlflow.end_run()
+    return gst
+
+
+def randf_train(X_train, y_train, X_test, y_test):
+    with mlflow.start_run(run_name="train_random_forest"):
+        randf = RandomForestRegressor(random_state=0)
+        randf.fit(X_train, y_train)
+        joblib.dump(randf, "models/random_forest_regression.joblib")
+        mlflow.sklearn.log_model(randf, "RandomForestRegressor")
+        mlflow.end_run()
+    return randf
+
+
+def xgb_train(X_train, y_train, X_test, y_test):
+    with mlflow.start_run(run_name="train_xgboost"):
+        xgbr = XGBRegressor()
+        xgbr.fit(X_train, y_train)
+        mlflow.sklearn.log_model(xgbr, "XGBoostRegressor")
+        joblib.dump(xgbr, "models/xgb_regression.joblib")
+        mlflow.end_run()
+    return xgbr
+
+
+def regression(data=pl.read_csv("data/clusters/kmeans_data.csv")):
+    data = pl.read_csv("data/clusters/kmeans_data.csv")
+    data = data.group_by(["Hour", "cluster"]).len().sort("cluster")
+    randf_rmse = {}
+    lgb_rmse = {}
+    xgbr_rmse = {}
+    mse = {
+        "RandomForestRegressor": randf_rmse,
+        "LightGBMRegressor": lgb_rmse,
+        "XGBoostRegressor": xgbr_rmse,
+    }
+    X = data[["Hour", "cluster"]]
+    y = data["len"]
+    X_train, X_test, y_train, y_test = train_test_split(
+        X, y, test_size=0.2, random_state=0
+    )
+    lgbr = lgboost_train(
+        X_train.to_numpy(), y_train.to_numpy(), X_test.to_numpy(), y_test.to_numpy()
+    )
+    xgbr = xgb_train(X_train, y_train, X_test, y_test)
+    randf = randf_train(X_train, y_train, X_test, y_test)
+    xy = pl.concat([pl.DataFrame(X_test), pl.DataFrame(y_test)], how="horizontal")
+    for cluster in xy["cluster"].unique():
+        sample_x = xy.filter(pl.col("cluster") == cluster)[["Hour", "cluster"]]
+        sample_y = xy.filter(pl.col("cluster") == cluster)[["len"]]
+        print(sample_x)
+        randf_pred = randf.predict(sample_x)
+        xgbr_pred = xgbr.predict(sample_x)
+        lgb_pred = lgbr.predict(sample_x.to_numpy())
+        rmse(sample_y, randf_pred, randf_rmse, f"Cluster {cluster}")
+        rmse(sample_y, xgbr_pred, xgbr_rmse, f"Cluster {cluster}")
+        rmse(sample_y, lgb_pred, lgb_rmse, f"Cluster {cluster}")
+    with mlflow.start_run(run_name="Regression"):
+        mlflow.log_metrics(mse)
+        mlflow.end_run()
+    save_test(randf_rmse, "Mse_randf.json")
+    save_test(xgbr_rmse, "Mse_xgbr.json")
+    save_test(lgb_rmse, "Mse_lgb.json")
 
 
 def plots():
-    data = pl.read_csv("data/clusters/clustered_alt.csv")
-    # data[:100].write_csv("data/clusters/redcalt.csv")
-    data_agg = data.group_by(["cluster", "Hour"]).len()
+    data = pl.read_csv("data/clusters/kmeans_data.csv")
+    data_agg = data.group_by(["cluster", "Hour"]).len().sort("cluster")
     for i in data_agg["cluster"].unique():
         filtered = data_agg.filter(pl.col("cluster") == i)
-        fig, ax = plt.subplots()
+        fig, ax = plt.subplots(dpi=300)
         ax.bar(filtered["Hour"], filtered["len"])
-        ax.set_title(f"Cluster {i}")
-        fig.savefig(f"reports/figures/cluster {i}")
+        ax.set_title(f"Cluster {i + 1}")
+        ax.set_xlabel("Hour")
+        ax.set_ylabel("Number of Vehicles")
+        fig.savefig(f"reports/figures/cluster {i + 1}")
 
 
-# plots()
-dump_models()
-dump_clusters()
-regression(pd.read_csv("data/clusters/clustered_data.csv"))
-# map()
+def main():
+    mlflow.set_tracking_uri(uri="http://127.0.0.1:5000")
+    mlflow.set_experiment("nyc_vehicle_clusters")
+    """
+    april = pl.read_csv("data/raw/data-apr14.csv")
+    may = pl.read_csv("data/raw/data-may14.csv")
+    june = pl.read_csv("data/raw/data-jun14.csv")
+    july = pl.read_csv("data/raw/data-jul14.csv")
+    august = pl.read_csv("data/raw/data-aug14.csv")
+    september = pl.read_csv("data/raw/data-sep14.csv")
+    months = {
+        "april": april,
+        "may": may,
+        "june": june,
+        "july": july,
+        "august": august,
+        "september": september,
+    }
+    total_data = pl.DataFrame()
+    for month, data in months.items():
+        total_data = pl.concat([total_data, data])
+    print(total_data)
+    process(total_data, "data")
+    """
+    train_clusters()
+    dump_clusters()
+    regression()
+    draw_map()
+    plots()
+    data = pl.read_csv("data/clusters/kmeans_data.csv")
+    print("mean: ", data.mean(), "max: ", data.max(), "min: ", data.min())
+    monthly_demand = (
+        data.group_by(["Month"]).len().sort(["Month"]).write_json("monthly_demand.json")
+    )
+    data.group_by("cluster").len().describe().write_json("data_describe.json")
+    print(monthly_demand, data["Base"].n_unique())
+
+
+main()
