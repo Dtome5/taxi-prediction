@@ -1,0 +1,15 @@
+artifact_uri: mlflow-artifacts:/504015519055006746/841ce1a982264ca0be6cc4b70e220f8d/artifacts
+end_time: 1746300090169
+entry_point_name: ''
+experiment_id: '504015519055006746'
+lifecycle_stage: active
+run_id: 841ce1a982264ca0be6cc4b70e220f8d
+run_name: generate_clusters
+run_uuid: 841ce1a982264ca0be6cc4b70e220f8d
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1746300083527
+status: 3
+tags: []
+user_id: dtome

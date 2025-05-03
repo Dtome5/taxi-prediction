@@ -1,0 +1,15 @@
+artifact_uri: mlflow-artifacts:/504015519055006746/f71df1b788ee45c7a4543ed6329ba330/artifacts
+end_time: 1746299511783
+entry_point_name: ''
+experiment_id: '504015519055006746'
+lifecycle_stage: active
+run_id: f71df1b788ee45c7a4543ed6329ba330
+run_name: Regression
+run_uuid: f71df1b788ee45c7a4543ed6329ba330
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1746299511725
+status: 4
+tags: []
+user_id: dtome

@@ -1,0 +1,15 @@
+artifact_uri: mlflow-artifacts:/504015519055006746/222edaea32c14fdc8fd68bfd1ce69d08/artifacts
+end_time: 1746299893597
+entry_point_name: ''
+experiment_id: '504015519055006746'
+lifecycle_stage: active
+run_id: 222edaea32c14fdc8fd68bfd1ce69d08
+run_name: train_xgboost
+run_uuid: 222edaea32c14fdc8fd68bfd1ce69d08
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1746299888494
+status: 3
+tags: []
+user_id: dtome

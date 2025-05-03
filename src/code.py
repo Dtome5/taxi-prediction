@@ -17,19 +17,23 @@ from sklearn.model_selection import train_test_split
 from xgboost import XGBRegressor
 
 
+# function to prepare data for machine learning
 def process(data: pl.DataFrame, name: str = "data"):
     with mlflow.start_run(run_name="process_data"):
         data = data.with_columns(
             pl.col("Date/Time").str.strptime(pl.Datetime, "%m/%d/%Y %H:%M:%S")
         )
+        # extract features from Date/Time
         data = data.with_columns(pl.col("Date/Time").dt.hour().alias("Hour"))
         data = data.with_columns(pl.col("Date/Time").dt.day().alias("Day"))
         data = data.with_columns(pl.col("Date/Time").dt.month().alias("Month"))
         data = data.with_columns(pl.col("Date/Time").dt.year().alias("Year"))
         data = data.with_columns(pl.col("Date/Time").dt.minute().alias("Minute"))
         data = data.drop(["Date/Time"])
+        # save data
         joblib.dump(data, f"data/processed/{name}.joblib")
         data.write_csv(f"data/processed/{name}.csv")
+        # Log artifact
         mlflow.log_artifact(f"data/processed/{name}.csv", "processed data")
 
 
@@ -44,7 +48,6 @@ def train_clusters(
         # Calculate clustering scores using the KNC results
         chscore = calinski_harabasz_score(coordinates, km.labels_)
         dbscore = davies_bouldin_score(coordinates, km.labels_)
-
         # Write scores to text files
         file_chscore = open("reports/tests/clustering/chscore.txt", "w+")
         file_dbscore = open("reports/tests/clustering/dbscore.txt", "w+")
@@ -93,30 +96,18 @@ def draw_map():
     lats = cluster_centers[:, [0]]
     lons = cluster_centers[:, [1]]
     print(cluster_centers)
-    # cluster_centers = [lats, lons]
     mean_cluster_centers = [
         float(lats.mean()),
         float(lons.mean()),
     ]
+
+    # draw map with folium
     mymap = folium.Map(location=mean_cluster_centers)
     folium.Marker(
         location=mean_cluster_centers,
         popup=f"Mean Location\nLat: {mean_cluster_centers[0]:.4f}, Lon: {mean_cluster_centers[1]:.4f}",
         icon=folium.Icon(color="red", icon="info-sign"),
     ).add_to(mymap)
-
-    cluster_colors = [
-        "blue",
-        "green",
-        "purple",
-        "orange",
-        "darkred",
-        "beige",
-        "darkgreen",
-        "red",
-        "brown",
-        "black",
-    ]
 
     for i in range(len(lats)):
         folium.CircleMarker(
@@ -129,20 +120,22 @@ def draw_map():
             fill_opacity=0.8,
             popup=f"Cluster {i}\nLat: {float(lats[i][0]):.4f}, Lon: {float(lons[i][0]):.4f}",
         ).add_to(mymap)
+    # define boundaries
     nyc_bounds = [
         [lats.max(), lons.max()],
         [lats.min(), lons.min()],
-    ]  # [SW, NE] corners
-    print(nyc_bounds)
+    ]
     mymap.fit_bounds(nyc_bounds)
-    mymap.save("map.html")
+    mymap.save("reports/figures/map.html")
 
 
+# function to add rmse to dict
 def rmse(true, pred, dict, key):
     rmse = root_mean_squared_error(true, pred)
     dict[key] = rmse
 
 
+# saving test results
 def save_test(dict, name):
     file = open(f"reports/tests/regression/{name}", "w+")
     json.dump(dict, file)
@@ -151,6 +144,7 @@ def save_test(dict, name):
 
 def lgboost_train(X_train, y_train, X_test, y_test):
     with mlflow.start_run(run_name="LightGBM"):
+        # tune model
         params = {
             "boosting_type": "gbdt",
             "objective": "regression",
@@ -188,6 +182,7 @@ def lgboost_train(X_train, y_train, X_test, y_test):
             valid_sets=lgb.Dataset(X_test, label=y_test),
             callbacks=[lgb.early_stopping(stopping_rounds=10)],
         )
+        # log model parameters and save model
         mlflow.log_params(params)
         mlflow.sklearn.log_model(gst, "XGBoost")
         joblib.dump(gst, "models/lgb_rergressor.joblib")
@@ -200,6 +195,7 @@ def randf_train(X_train, y_train, X_test, y_test):
         randf = RandomForestRegressor(random_state=0)
         randf.fit(X_train, y_train)
         joblib.dump(randf, "models/random_forest_regression.joblib")
+        # log model parameters and save model
         mlflow.sklearn.log_model(randf, "RandomForestRegressor")
         mlflow.end_run()
     return randf
@@ -209,6 +205,7 @@ def xgb_train(X_train, y_train, X_test, y_test):
     with mlflow.start_run(run_name="train_xgboost"):
         xgbr = XGBRegressor()
         xgbr.fit(X_train, y_train)
+        # log model parameters and save model
         mlflow.sklearn.log_model(xgbr, "XGBoostRegressor")
         joblib.dump(xgbr, "models/xgb_regression.joblib")
         mlflow.end_run()
@@ -221,11 +218,6 @@ def regression(data=pl.read_csv("data/clusters/kmeans_data.csv")):
     randf_rmse = {}
     lgb_rmse = {}
     xgbr_rmse = {}
-    mse = {
-        "RandomForestRegressor": randf_rmse,
-        "LightGBMRegressor": lgb_rmse,
-        "XGBoostRegressor": xgbr_rmse,
-    }
     X = data[["Hour", "cluster"]]
     y = data["len"]
     X_train, X_test, y_train, y_test = train_test_split(
@@ -236,6 +228,13 @@ def regression(data=pl.read_csv("data/clusters/kmeans_data.csv")):
     )
     xgbr = xgb_train(X_train, y_train, X_test, y_test)
     randf = randf_train(X_train, y_train, X_test, y_test)
+    mse = {
+        "RandomForestRegressor": root_mean_squared_error(y_test, randf.predict(X_test)),
+        "LightGBMRegressor": root_mean_squared_error(
+            y_test, lgbr.predict(X_test.to_numpy())
+        ),
+        "XGBoostRegressor": root_mean_squared_error(y_test, xgbr.predict(X_test)),
+    }
     xy = pl.concat([pl.DataFrame(X_test), pl.DataFrame(y_test)], how="horizontal")
     for cluster in xy["cluster"].unique():
         sample_x = xy.filter(pl.col("cluster") == cluster)[["Hour", "cluster"]]
@@ -292,8 +291,8 @@ def main():
     print(total_data)
     process(total_data, "data")
     """
-    train_clusters()
-    dump_clusters()
+    # train_clusters()
+    # dump_clusters()
     regression()
     draw_map()
     plots()

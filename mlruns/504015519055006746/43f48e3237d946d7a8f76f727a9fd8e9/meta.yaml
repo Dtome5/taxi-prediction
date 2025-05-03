@@ -1,0 +1,15 @@
+artifact_uri: mlflow-artifacts:/504015519055006746/43f48e3237d946d7a8f76f727a9fd8e9/artifacts
+end_time: 1746299899026
+entry_point_name: ''
+experiment_id: '504015519055006746'
+lifecycle_stage: active
+run_id: 43f48e3237d946d7a8f76f727a9fd8e9
+run_name: train_random_forest
+run_uuid: 43f48e3237d946d7a8f76f727a9fd8e9
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1746299893624
+status: 3
+tags: []
+user_id: dtome
