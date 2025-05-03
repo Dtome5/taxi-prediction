@@ -267,10 +267,7 @@ def plots():
         fig.savefig(f"reports/figures/cluster {i + 1}")
 
 
-def main():
-    mlflow.set_tracking_uri(uri="http://127.0.0.1:5000")
-    mlflow.set_experiment("nyc_vehicle_clusters")
-    """
+def load():
     april = pl.read_csv("data/raw/data-apr14.csv")
     may = pl.read_csv("data/raw/data-may14.csv")
     june = pl.read_csv("data/raw/data-jun14.csv")
@@ -290,19 +287,21 @@ def main():
         total_data = pl.concat([total_data, data])
     print(total_data)
     process(total_data, "data")
-    """
-    # train_clusters()
-    # dump_clusters()
+
+
+def main():
+    mlflow.set_tracking_uri(uri="http://127.0.0.1:5000")
+    mlflow.set_experiment("nyc_vehicle_clusters")
+    load()
+    train_clusters()
+    dump_clusters()
     regression()
     draw_map()
     plots()
     data = pl.read_csv("data/clusters/kmeans_data.csv")
-    print("mean: ", data.mean(), "max: ", data.max(), "min: ", data.min())
-    monthly_demand = (
-        data.group_by(["Month"]).len().sort(["Month"]).write_json("monthly_demand.json")
-    )
+    data.group_by(["Month"]).len().sort(["Month"]).write_json("monthly_demand.json")
     data.group_by("cluster").len().describe().write_json("data_describe.json")
-    print(monthly_demand, data["Base"].n_unique())
 
 
-main()
+if __name__ == "__main__":
+    main()
