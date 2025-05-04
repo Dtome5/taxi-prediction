@@ -1,5 +1,4 @@
 
-Here's a `README.md` file tailored to your Python project, which processes and analyzes NYC GPS vehicle data:
 
 ---
 
