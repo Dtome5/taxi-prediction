@@ -65,9 +65,6 @@ pip install -r requirements.txt
 * **Regression Metrics**: RMSE for each model and cluster.
 * **Maps & Plots**: Cluster visualization and hourly demand bar charts.
 
-## Author
-
-Developed for vehicle traffic pattern analysis and demand forecasting in urban environments.
 
 ---
 
