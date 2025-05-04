@@ -71,5 +71,3 @@ Developed for vehicle traffic pattern analysis and demand forecasting in urban e
 
 ---
 
-Would you like me to generate a `requirements.txt` file as well?
-
